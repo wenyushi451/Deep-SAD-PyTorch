@@ -1,9 +1,11 @@
 from torch.utils.data import DataLoader, Subset
 from base.base_dataset import BaseADDataset
 from base.local_dataset import LocalDataset
+
 from .preprocessing import create_semisupervised_setting
 
 import torch
+import torchvision.transforms as transforms
 
 
 class CustomizeDataset(BaseADDataset):
@@ -21,16 +23,20 @@ class CustomizeDataset(BaseADDataset):
 
         # Define normal and outlier classes
         self.n_classes = 2  # 0: normal, 1: outlier
-        self.normal_classes = (0,)
-        self.outlier_classes = (1,)
+        self.normal_classes = tuple([0])
+        self.outlier_classes = list(range(0, 3))
+        self.outlier_classes.remove(0)
+        self.outlier_classes = tuple(self.outlier_classes)
 
         if n_known_outlier_classes == 0:
             self.known_outlier_classes = ()
         else:
             self.known_outlier_classes = (1,)
 
+        # target_transform = transforms.Lambda(lambda x: int(x in self.outlier_classes))
+        target_transform = None
         # Get train set
-        train_set = LocalDataset(root=self.root, dataset_name=dataset_name, train=True, random_state=random_state)
+        train_set = LocalDataset(root=self.root, dataset_name=dataset_name, target_transform=target_transform, train=True, random_state=random_state)
 
         # Create semi-supervised setting
         idx, _, semi_targets = create_semisupervised_setting(
@@ -48,7 +54,7 @@ class CustomizeDataset(BaseADDataset):
         self.train_set = Subset(train_set, idx)
 
         # Get test set
-        self.test_set = LocalDataset(root=self.root, dataset_name=dataset_name, train=False, random_state=random_state)
+        self.test_set = LocalDataset(root=self.root, dataset_name=dataset_name, target_transform=target_transform, train=False, random_state=random_state)
 
     def loaders(
         self, batch_size: int, shuffle_train=True, shuffle_test=False, num_workers: int = 0

@@ -10,15 +10,16 @@ from PIL import Image
 
 
 class LocalDataset(Dataset):
-    def __init__(self, root: str, dataset_name: str, train=True, random_state=None):
+    def __init__(self, root: str, dataset_name: str, target_transform, train=True, random_state=None):
         super(Dataset, self).__init__()
+        self.target_transform = target_transform
 
         self.classes = [0, 1]
         self.root = root
         self.train = train  # training set or test set
         # self.dataset_path = os.path.join(self.root, self.dataset_name)
         # class_idx/image
-        X = np.array(glob.glob(os.path.join(self.root, "*/*")))
+        X = np.array(glob.glob(os.path.join(self.root, "*/*.jpg")))
         y = [int(i.split("/")[-2]) for i in X]
         y = np.array(y)
         idx_norm = y == 0
@@ -56,7 +57,7 @@ class LocalDataset(Dataset):
         """
         data = Image.open(self.data[index])
         data = self.transform(data)
-        sample, target, semi_target = data, int(self.targets[index]), int(self.semi_targets[index])
+        sample, target, semi_target = data, 0 if self.targets[index] == 0 else 1, int(self.semi_targets[index])
         return sample, target, semi_target, index
 
     def __len__(self):
