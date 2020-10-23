@@ -12,12 +12,22 @@ import numpy as np
 
 
 class DeepSADTrainer(BaseTrainer):
-
-    def __init__(self, c, eta: float, optimizer_name: str = 'adam', lr: float = 0.001, n_epochs: int = 150,
-                 lr_milestones: tuple = (), batch_size: int = 128, weight_decay: float = 1e-6, device: str = 'cuda',
-                 n_jobs_dataloader: int = 0):
-        super().__init__(optimizer_name, lr, n_epochs, lr_milestones, batch_size, weight_decay, device,
-                         n_jobs_dataloader)
+    def __init__(
+        self,
+        c,
+        eta: float,
+        optimizer_name: str = "adam",
+        lr: float = 0.001,
+        n_epochs: int = 150,
+        lr_milestones: tuple = (),
+        batch_size: int = 128,
+        weight_decay: float = 1e-6,
+        device: str = "cuda",
+        n_jobs_dataloader: int = 0,
+    ):
+        super().__init__(
+            optimizer_name, lr, n_epochs, lr_milestones, batch_size, weight_decay, device, n_jobs_dataloader
+        )
 
         # Deep SAD parameters
         self.c = torch.tensor(c, device=self.device) if c is not None else None
@@ -49,19 +59,19 @@ class DeepSADTrainer(BaseTrainer):
 
         # Initialize hypersphere center c (if c not loaded)
         if self.c is None:
-            logger.info('Initializing center c...')
+            logger.info("Initializing center c...")
             self.c = self.init_center_c(train_loader, net)
-            logger.info('Center c initialized.')
+            logger.info("Center c initialized.")
 
         # Training
-        logger.info('Starting training...')
+        logger.info("Starting training...")
         start_time = time.time()
         net.train()
         for epoch in range(self.n_epochs):
 
             scheduler.step()
             if epoch in self.lr_milestones:
-                logger.info('  LR scheduler: new learning rate is %g' % float(scheduler.get_lr()[0]))
+                logger.info("  LR scheduler: new learning rate is %g" % float(scheduler.get_lr()[0]))
 
             epoch_loss = 0.0
             n_batches = 0
@@ -86,12 +96,14 @@ class DeepSADTrainer(BaseTrainer):
 
             # log epoch statistics
             epoch_train_time = time.time() - epoch_start_time
-            logger.info(f'| Epoch: {epoch + 1:03}/{self.n_epochs:03} | Train Time: {epoch_train_time:.3f}s '
-                        f'| Train Loss: {epoch_loss / n_batches:.6f} |')
+            logger.info(
+                f"| Epoch: {epoch + 1:03}/{self.n_epochs:03} | Train Time: {epoch_train_time:.3f}s "
+                f"| Train Loss: {epoch_loss / n_batches:.6f} |"
+            )
 
         self.train_time = time.time() - start_time
-        logger.info('Training Time: {:.3f}s'.format(self.train_time))
-        logger.info('Finished training.')
+        logger.info("Training Time: {:.3f}s".format(self.train_time))
+        logger.info("Finished training.")
 
         return net
 
@@ -105,7 +117,7 @@ class DeepSADTrainer(BaseTrainer):
         net = net.to(self.device)
 
         # Testing
-        logger.info('Starting testing...')
+        logger.info("Starting testing...")
         epoch_loss = 0.0
         n_batches = 0
         start_time = time.time()
@@ -127,9 +139,13 @@ class DeepSADTrainer(BaseTrainer):
                 scores = dist
 
                 # Save triples of (idx, label, score) in a list
-                idx_label_score += list(zip(idx.cpu().data.numpy().tolist(),
-                                            labels.cpu().data.numpy().tolist(),
-                                            scores.cpu().data.numpy().tolist()))
+                idx_label_score += list(
+                    zip(
+                        idx.cpu().data.numpy().tolist(),
+                        labels.cpu().data.numpy().tolist(),
+                        scores.cpu().data.numpy().tolist(),
+                    )
+                )
 
                 epoch_loss += loss.item()
                 n_batches += 1
@@ -141,13 +157,15 @@ class DeepSADTrainer(BaseTrainer):
         _, labels, scores = zip(*idx_label_score)
         labels = np.array(labels)
         scores = np.array(scores)
+
+        print("Min distance: {}; Max distance: {}; Avg: {}".format(np.min(scores), np.max(scores), np.average(scores)))
         self.test_auc = roc_auc_score(labels, scores)
 
         # Log results
-        logger.info('Test Loss: {:.6f}'.format(epoch_loss / n_batches))
-        logger.info('Test AUC: {:.2f}%'.format(100. * self.test_auc))
-        logger.info('Test Time: {:.3f}s'.format(self.test_time))
-        logger.info('Finished testing.')
+        logger.info("Test Loss: {:.6f}".format(epoch_loss / n_batches))
+        logger.info("Test AUC: {:.2f}%".format(100.0 * self.test_auc))
+        logger.info("Test Time: {:.3f}s".format(self.test_time))
+        logger.info("Finished testing.")
 
     def init_center_c(self, train_loader: DataLoader, net: BaseNet, eps=0.1):
         """Initialize hypersphere center c as the mean from an initial forward pass on the data."""

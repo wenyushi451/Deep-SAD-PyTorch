@@ -10,7 +10,7 @@ from PIL import Image
 
 
 class LocalDataset(Dataset):
-    def __init__(self, root: str, dataset_name: str, target_transform, train=True, random_state=None):
+    def __init__(self, root: str, dataset_name: str, target_transform, train=True, random_state=None, split=True):
         super(Dataset, self).__init__()
         self.target_transform = target_transform
 
@@ -22,27 +22,31 @@ class LocalDataset(Dataset):
         X = np.array(glob.glob(os.path.join(self.root, "*/*.jpg")))
         y = [int(i.split("/")[-2]) for i in X]
         y = np.array(y)
-        idx_norm = y == 0
-        idx_out = y != 0
+        if split:
+            idx_norm = y == 0
+            idx_out = y != 0
 
-        # 80% data for training and 20% for testing; keep outlier ratio
-        X_train_norm, X_test_norm, y_train_norm, y_test_norm = train_test_split(
-            X[idx_norm], y[idx_norm], test_size=0.2, random_state=random_state, stratify=y[idx_norm]
-        )
-        X_train_out, X_test_out, y_train_out, y_test_out = train_test_split(
-            X[idx_out], y[idx_out], test_size=0.2, random_state=random_state, stratify=y[idx_norm]
-        )
-        X_train = np.concatenate((X_train_norm, X_train_out))
-        X_test = np.concatenate((X_test_norm, X_test_out))
-        y_train = np.concatenate((y_train_norm, y_train_out))
-        y_test = np.concatenate((y_test_norm, y_test_out))
+            # 80% data for training and 20% for testing; keep outlier ratio
+            X_train_norm, X_test_norm, y_train_norm, y_test_norm = train_test_split(
+                X[idx_norm], y[idx_norm], test_size=0.2, random_state=random_state, stratify=y[idx_norm]
+            )
+            X_train_out, X_test_out, y_train_out, y_test_out = train_test_split(
+                X[idx_out], y[idx_out], test_size=0.2, random_state=random_state, stratify=y[idx_out]
+            )
+            X_train = np.concatenate((X_train_norm, X_train_out))
+            X_test = np.concatenate((X_test_norm, X_test_out))
+            y_train = np.concatenate((y_train_norm, y_train_out))
+            y_test = np.concatenate((y_test_norm, y_test_out))
 
-        if self.train:
-            self.data = X_train
-            self.targets = torch.tensor(y_train, dtype=torch.int64)
+            if self.train:
+                self.data = X_train
+                self.targets = torch.tensor(y_train, dtype=torch.int64)
+            else:
+                self.data = X_test
+                self.targets = torch.tensor(y_test, dtype=torch.int64)
         else:
-            self.data = X_test
-            self.targets = torch.tensor(y_test, dtype=torch.int64)
+            self.data = X
+            self.targets = torch.tensor(y, dtype=torch.int64)
 
         self.semi_targets = torch.zeros_like(self.targets)
         self.transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
