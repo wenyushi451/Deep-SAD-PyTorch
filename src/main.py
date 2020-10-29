@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 from utils.config import Config
-from utils.visualization.plot_images_grid import plot_images_grid
+# from utils.visualization.plot_images_grid import plot_images_grid
 from DeepSAD import DeepSAD
 from datasets.main import load_dataset
 
@@ -45,6 +45,7 @@ from datasets.main import load_dataset
             "shuttle_mlp",
             "thyroid_mlp",
             "vgg",
+            "resnet18"
         ]
     ),
 )
@@ -349,10 +350,10 @@ def main(
                 np.transpose(dataset.test_set.data[idx_normal_sorted[-32:], ...], (0, 3, 1, 2))
             )
 
-        plot_images_grid(X_all_low, export_img=xp_path + "/all_low", padding=2)
-        plot_images_grid(X_all_high, export_img=xp_path + "/all_high", padding=2)
-        plot_images_grid(X_normal_low, export_img=xp_path + "/normals_low", padding=2)
-        plot_images_grid(X_normal_high, export_img=xp_path + "/normals_high", padding=2)
+        # plot_images_grid(X_all_low, export_img=xp_path + "/all_low", padding=2)
+        # plot_images_grid(X_all_high, export_img=xp_path + "/all_high", padding=2)
+        # plot_images_grid(X_normal_low, export_img=xp_path + "/normals_low", padding=2)
+        # plot_images_grid(X_normal_high, export_img=xp_path + "/normals_high", padding=2)
 
 
 if __name__ == "__main__":

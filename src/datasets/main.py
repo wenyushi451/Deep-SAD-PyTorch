@@ -15,6 +15,7 @@ def load_dataset(
     ratio_known_outlier: float = 0.0,
     ratio_pollution: float = 0.0,
     random_state=None,
+    random_effect: bool = True,
 ):
     """Loads the dataset."""
 
@@ -43,6 +44,7 @@ def load_dataset(
             ratio_known_outlier=ratio_known_outlier,
             ratio_pollution=ratio_pollution,
             random_state=random_state,
+            random_effect=random_effect,
         )
 
     if dataset_name == "mnist":

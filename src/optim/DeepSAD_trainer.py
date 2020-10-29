@@ -61,6 +61,7 @@ class DeepSADTrainer(BaseTrainer):
         if self.c is None:
             logger.info("Initializing center c...")
             self.c = self.init_center_c(train_loader, net)
+            print(self.c)
             logger.info("Center c initialized.")
 
         # Training
@@ -69,7 +70,6 @@ class DeepSADTrainer(BaseTrainer):
         net.train()
         for epoch in range(self.n_epochs):
 
-            scheduler.step()
             if epoch in self.lr_milestones:
                 logger.info("  LR scheduler: new learning rate is %g" % float(scheduler.get_lr()[0]))
 
@@ -94,6 +94,7 @@ class DeepSADTrainer(BaseTrainer):
                 epoch_loss += loss.item()
                 n_batches += 1
 
+            scheduler.step()
             # log epoch statistics
             epoch_train_time = time.time() - epoch_start_time
             logger.info(

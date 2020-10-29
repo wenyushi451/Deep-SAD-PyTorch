@@ -7,10 +7,20 @@ import glob
 import torch
 import numpy as np
 from PIL import Image
+import pdb
 
 
 class LocalDataset(Dataset):
-    def __init__(self, root: str, dataset_name: str, target_transform, train=True, random_state=None, split=True):
+    def __init__(
+        self,
+        root: str,
+        dataset_name: str,
+        target_transform,
+        train=True,
+        random_state=None,
+        split=True,
+        random_effect=True,
+    ):
         super(Dataset, self).__init__()
         self.target_transform = target_transform
 
@@ -19,7 +29,7 @@ class LocalDataset(Dataset):
         self.train = train  # training set or test set
         # self.dataset_path = os.path.join(self.root, self.dataset_name)
         # class_idx/image
-        X = np.array(glob.glob(os.path.join(self.root, "*/*.jpg")))
+        X = np.array(glob.glob(os.path.join(self.root, "*/*.[jp][pn][g]")))
         y = [int(i.split("/")[-2]) for i in X]
         y = np.array(y)
         if split:
@@ -27,11 +37,12 @@ class LocalDataset(Dataset):
             idx_out = y != 0
 
             # 80% data for training and 20% for testing; keep outlier ratio
+            # pdb.set_trace()
             X_train_norm, X_test_norm, y_train_norm, y_test_norm = train_test_split(
-                X[idx_norm], y[idx_norm], test_size=0.2, random_state=random_state, stratify=y[idx_norm]
+                X[idx_norm], y[idx_norm], test_size=0.1, random_state=random_state, stratify=y[idx_norm]
             )
             X_train_out, X_test_out, y_train_out, y_test_out = train_test_split(
-                X[idx_out], y[idx_out], test_size=0.2, random_state=random_state, stratify=y[idx_out]
+                X[idx_out], y[idx_out], test_size=0.1, random_state=random_state, stratify=y[idx_out]
             )
             X_train = np.concatenate((X_train_norm, X_train_out))
             X_test = np.concatenate((X_test_norm, X_test_out))
@@ -49,7 +60,22 @@ class LocalDataset(Dataset):
             self.targets = torch.tensor(y, dtype=torch.int64)
 
         self.semi_targets = torch.zeros_like(self.targets)
-        self.transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
+        # for training we will add brightness variance
+        if random_effect:
+            self.transform = transforms.Compose(
+                [
+                    # transforms.ColorJitter(
+                    #     brightness=0.5 + int(np.random.rand(1)), contrast=0.5 + int(np.random.rand(1))
+                    # ),
+                    # saturation=0.5 + int(np.random.rand(1)),
+                    # hue=0.5 + int(np.random.rand(1))),
+                    transforms.Resize((224, 224)),
+                    transforms.ToTensor(),
+                ]
+            )
+        # for testing
+        else:
+            self.transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
 
     def __getitem__(self, index):
         """

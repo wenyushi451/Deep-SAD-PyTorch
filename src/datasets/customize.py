@@ -19,6 +19,7 @@ class CustomizeDataset(BaseADDataset):
         ratio_pollution: float = 0.0,
         random_state=None,
         split=True,
+        random_effect=True,
     ):
         super().__init__(root)
 
@@ -45,6 +46,7 @@ class CustomizeDataset(BaseADDataset):
                 target_transform=target_transform,
                 train=True,
                 random_state=random_state,
+                random_effect=random_effect,
             )
 
             # Create semi-supervised setting
@@ -69,6 +71,7 @@ class CustomizeDataset(BaseADDataset):
                 target_transform=target_transform,
                 train=False,
                 random_state=random_state,
+                random_effect=random_effect,
             )
         else:
             self.data_set = LocalDataset(
@@ -78,6 +81,7 @@ class CustomizeDataset(BaseADDataset):
                 train=False,
                 random_state=random_state,
                 split=self.split,
+                random_effect=random_effect,
             )
 
     def loaders(

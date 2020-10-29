@@ -5,6 +5,7 @@ from .mlp import MLP, MLP_Autoencoder
 from .vae import VariationalAutoencoder
 from .dgm import DeepGenerativeModel, StackedDeepGenerativeModel
 from .vgg import VGG, VGG_Autoencoder
+from .resnet import ResNet18_Autoencoder, ResNet18Enc
 
 
 def build_network(net_name, ae_net=None):
@@ -33,6 +34,7 @@ def build_network(net_name, ae_net=None):
         "shuttle_DGM_M2",
         "thyroid_DGM_M2",
         "vgg",
+        "resnet18"
     )
     assert net_name in implemented_networks
 
@@ -104,6 +106,9 @@ def build_network(net_name, ae_net=None):
     if net_name == "vgg":
         net = VGG()
 
+    if net_name == "resnet18":
+        net = ResNet18Enc()
+
     return net
 
 
@@ -124,6 +129,7 @@ def build_autoencoder(net_name):
         "shuttle_mlp",
         "thyroid_mlp",
         "vgg",
+        "resnet18"
     )
 
     assert net_name in implemented_networks
@@ -168,5 +174,8 @@ def build_autoencoder(net_name):
 
     if net_name == "vgg":
         ae_net = VGG_Autoencoder()
+
+    if net_name == "resnet18":
+        ae_net = ResNet18_Autoencoder()
 
     return ae_net

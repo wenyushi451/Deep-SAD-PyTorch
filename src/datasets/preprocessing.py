@@ -1,11 +1,19 @@
 import torch
 import numpy as np
+import pdb
 
 
-def create_semisupervised_setting(labels, normal_classes, outlier_classes, known_outlier_classes,
-                                  ratio_known_normal, ratio_known_outlier, ratio_pollution):
+def create_semisupervised_setting(
+    labels,
+    normal_classes,
+    outlier_classes,
+    known_outlier_classes,
+    ratio_known_normal,
+    ratio_known_outlier,
+    ratio_pollution,
+):
     """
-    Create a semi-supervised data setting. 
+    Create a semi-supervised data setting.
     :param labels: np.array with labels of all dataset samples
     :param normal_classes: tuple with normal class labels
     :param outlier_classes: tuple with anomaly class labels
@@ -22,12 +30,21 @@ def create_semisupervised_setting(labels, normal_classes, outlier_classes, known
     n_normal = len(idx_normal)
 
     # Solve system of linear equations to obtain respective number of samples
-    a = np.array([[1, 1, 0, 0],
-                  [(1-ratio_known_normal), -ratio_known_normal, -ratio_known_normal, -ratio_known_normal],
-                  [-ratio_known_outlier, -ratio_known_outlier, -ratio_known_outlier, (1-ratio_known_outlier)],
-                  [0, -ratio_pollution, (1-ratio_pollution), 0]])
+    # a = np.array([[1, 1, 0, 0],
+    #               [(1-ratio_known_normal), -ratio_known_normal, -ratio_known_normal, -ratio_known_normal],
+    #               [-ratio_known_outlier, -ratio_known_outlier, -ratio_known_outlier, (1-ratio_known_outlier)],
+    #               [0, -ratio_pollution, (1-ratio_pollution), 0]])
+    a = np.array(
+        [
+            [1, (1 - ratio_known_normal), -ratio_known_outlier, 0],
+            [1, -ratio_known_normal, -ratio_known_outlier, -ratio_pollution],
+            [0, -ratio_known_normal, -ratio_known_outlier, (1 - ratio_pollution)],
+            [0, -ratio_known_normal, (1 - ratio_known_outlier), 0],
+        ]
+    )
     b = np.array([n_normal, 0, 0, 0])
     x = np.linalg.solve(a, b)
+    # pdb.set_trace()
 
     # Get number of samples
     n_known_normal = int(x[0])
@@ -35,13 +52,18 @@ def create_semisupervised_setting(labels, normal_classes, outlier_classes, known
     n_unlabeled_outlier = int(x[2])
     n_known_outlier = int(x[3])
 
+    # trick setting for customize dataset
+    n_known_normal = n_normal - 1
+    n_unlabeled_normal = 1
+    n_unlabeled_outlier = 1
+    n_known_outlier = len(idx_outlier) - 1
+
     # Sample indices
     perm_normal = np.random.permutation(n_normal)
     perm_outlier = np.random.permutation(len(idx_outlier))
     perm_known_outlier = np.random.permutation(len(idx_known_outlier_candidates))
-
     idx_known_normal = idx_normal[perm_normal[:n_known_normal]].tolist()
-    idx_unlabeled_normal = idx_normal[perm_normal[n_known_normal:n_known_normal+n_unlabeled_normal]].tolist()
+    idx_unlabeled_normal = idx_normal[perm_normal[n_known_normal : n_known_normal + n_unlabeled_normal]].tolist()
     idx_unlabeled_outlier = idx_outlier[perm_outlier[:n_unlabeled_outlier]].tolist()
     idx_known_outlier = idx_known_outlier_candidates[perm_known_outlier[:n_known_outlier]].tolist()
 
@@ -53,6 +75,7 @@ def create_semisupervised_setting(labels, normal_classes, outlier_classes, known
 
     # Get semi-supervised setting labels
     semi_labels_known_normal = np.ones(n_known_normal).astype(np.int32).tolist()
+    # pdb.set_trace()
     semi_labels_unlabeled_normal = np.zeros(n_unlabeled_normal).astype(np.int32).tolist()
     semi_labels_unlabeled_outlier = np.zeros(n_unlabeled_outlier).astype(np.int32).tolist()
     semi_labels_known_outlier = (-np.ones(n_known_outlier).astype(np.int32)).tolist()
@@ -60,7 +83,11 @@ def create_semisupervised_setting(labels, normal_classes, outlier_classes, known
     # Create final lists
     list_idx = idx_known_normal + idx_unlabeled_normal + idx_unlabeled_outlier + idx_known_outlier
     list_labels = labels_known_normal + labels_unlabeled_normal + labels_unlabeled_outlier + labels_known_outlier
-    list_semi_labels = (semi_labels_known_normal + semi_labels_unlabeled_normal + semi_labels_unlabeled_outlier
-                        + semi_labels_known_outlier)
+    list_semi_labels = (
+        semi_labels_known_normal
+        + semi_labels_unlabeled_normal
+        + semi_labels_unlabeled_outlier
+        + semi_labels_known_outlier
+    )
 
     return list_idx, list_labels, list_semi_labels
